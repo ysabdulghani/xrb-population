@@ -97,4 +97,4 @@ for d_ratio in [d_origin/x for x in d_list]:
 df = pd.DataFrame(table)
 
 # Write the DataFrame to a CSV file
-df.to_csv("/disk/data/youssef/scripts/xrb-population/table_"+args.sourceSpectrumDir+".csv", index=False)
+df.to_csv("/disk/data/youssef/scripts/xrb-population/results/table_"+args.sourceSpectrumDir+".csv", index=False)
