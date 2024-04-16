@@ -84,14 +84,15 @@ for d_ratio in [d_origin/x for x in d_list]:
         Model("tbabs*(po+ezdiskbb)",setPars={1:str(nH_value)+",0",2:gamma,4:',,0.1,0.1'})
         Fit.query = "yes"
         Fit.perform()
+        
         try:
             Fit.error("1-5")
             Plot.xAxis = "KeV"
             Plot("ldata delchi")
             Plot()
-            table.append({"nH: ":nH_value, "d": d_origin/d_ratio, "red_chi_squared": Fit.statistic/Fit.dof, "disk_norm": m.ezdiskbb.norm.values[0], "error_disk_norm": m.ezdiskbb.norm.error[0:2]})
+            table.append({"nH: ":nH_value, "d": d_origin/d_ratio, "red_chi_squared": Fit.statistic/Fit.dof, "disk_norm": m.ezdiskbb.norm.values[0],"error_disk_norm_low": m.ezdiskbb.norm.error[0],"error_disk_norm_up": m.ezdiskbb.norm.error[1],"frac_uncert": ((m.ezdiskbb.norm.error[0]+m.ezdiskbb.norm.error[1])/2)/(m.ezdiskbb.norm.values[0])})                 
         except:
-            table.append({"nH: ":nH_value, "d": d_origin/d_ratio, "red_chi_squared": Fit.statistic/Fit.dof, "disk_norm": m.ezdiskbb.norm.values[0], "error_disk_norm": None})
+            table.append({"nH: ":nH_value, "d": d_origin/d_ratio, "red_chi_squared": Fit.statistic/Fit.dof, "disk_norm": m.ezdiskbb.norm.values[0],"error_disk_norm_low": None,"error_disk_norm_up": None,"frac_uncert": None})
 
 
 df = pd.DataFrame(table)
