@@ -1,5 +1,6 @@
 import os
 import sys
+import glob
 
 
 def readDatesFile(fileName):
@@ -40,7 +41,7 @@ def findSavedModel():
     rootDir = os.getcwd()
     for dirName, subdirList, fileList in os.walk(rootDir):
         for fname in fileList:
-            if 'PLonlyFlux' in fname and '.xcm' in fname and '2023' not in fname:
+            if 'PLonlyFlux' in fname and '.xcm' in fname and '2023' not in fname and 'fake' in fname:
                 return fname
     return None
 
