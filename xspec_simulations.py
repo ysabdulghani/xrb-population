@@ -19,7 +19,7 @@ class simulation:
         self.model =  model_def
         self.sim_params_dic = simulation_params_dic 
         self.fit_params_dic = fit_params_dic
-        if instrument == 'maxi':
+        if instrument == 'maxi': # Will need to change this part according to your need
             self.energyRange_low = '2.0'
             self.energyRange_high= '20.0'
             self.responseFilename =  "gx339-4_g_low.rsp" # Need to be short name and in same directory where your run simulation
