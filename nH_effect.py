@@ -12,7 +12,7 @@ from xspec_simulations import *
 import random
 
 def run_simulation(arguments):
-    Xset.seed = random.randint(0, 100) # Need to fix or make sure you generate from a larger pool of int
+    Xset.seed = random.randint(0, 10000)
     d_ratio, nH_value, iteration, args = arguments
 
     os.chdir(args.sourceSpectrumDir)
