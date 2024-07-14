@@ -138,7 +138,7 @@ def scale_powerlaw_norm(gamma,temp,ezdiskbb_norm,ratio_pl_to_disk):
    return pl_norm
 
 def run_simulation(arguments):
-    Xset.seed = random.randint(0, 10000) # Need to fix or make sure you generate from a larger pool of int
+    Xset.seed = random.randint(0, 10000)
     nH_value, d, args, iteration= arguments
 
     ezdiskbb_norm = to_norm(d,args.mass,args.a,args.inc,limb_dark=True)
@@ -179,9 +179,8 @@ if __name__ == "__main__":
     # Parse the argument
     args = parser.parse_args()
 
-    d_list = [x*0.5 for x in range(2,11,1)]
-    d_list.extend(range(6,25,4))
-    nH_list = [0.5,2.5,4.5,6.5,8.5,10.5]
+    d_list = [1,2,3,4,5,6,8,12,18,26]
+    nH_list = [0.5,5,10]
 
     # d_list = [2]
     # nH_list = [1.0]
