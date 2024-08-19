@@ -1,7 +1,7 @@
 
 from xspec import *
 import subprocess
-
+import heasoftpy as hsp
 
 class simulation:
     
@@ -47,9 +47,12 @@ class simulation:
         fake_settings = FakeitSettings(response=self.responseFilename,background=self.backgroundFilename,fileName="fakeit_tmp_"+str(id)+".pha",**kwargs)
         AllData.fakeit(1, fake_settings, applyStats=True)
 
-        command = f'ftgrouppha fakeit_tmp_'+str(id)+'.pha backfile=fakeit_tmp_'+str(id)+'_bkg.pha fakeit_tmp_'+str(id)+'_binned.pha snmin 3'
-        process = subprocess.Popen(command, shell=True)
-        process.wait()
+        with hsp.utils.local_pfiles_context():
+            hsp.ftgrouppha(infile='fakeit_tmp_'+str(id)+'.pha',backfile='fakeit_tmp_'+str(id)+'_bkg.pha',outfile='fakeit_tmp_'+str(id)+'_binned.pha',grouptype='snmin',groupscale='3')
+
+        # command = f'ftgrouppha fakeit_tmp_'+str(id)+'.pha backfile=fakeit_tmp_'+str(id)+'_bkg.pha fakeit_tmp_'+str(id)+'_binned.pha snmin 3'
+        # process = subprocess.Popen(command, shell=True)
+        # process.wait()
 
         s1 = Spectrum("fakeit_tmp_"+str(id)+"_binned.pha")
         AllData.ignore("bad")
