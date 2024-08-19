@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import numpy as np
 import time
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool, cpu_count, TimeoutError
 from tqdm import tqdm
 from xspec_simulations import *
 import random
@@ -196,13 +196,25 @@ if __name__ == "__main__":
             for iteration in range(300):
                 all_args.append((nH_value,d,args,iteration))
 
-    with Pool(int(cpu_count()/2) - 1) as pool:  # Use all but one CPU core
-        results = list(tqdm(pool.imap(run_simulation, all_args,chunksize=1), total=len(all_args), desc="Running simulations",position=0, leave=True))
-
-    for result in results:
-        table_full.append(result)
-
-    df_full = pd.DataFrame(table_full)
+    with Pool(int(cpu_count()/2) - 1) as pool:  # Use all but one CPU core   
+        results = []
+        try:
+            it = pool.imap(run_simulation, all_args, chunksize=1)
+            for _ in tqdm(range(len(all_args)), desc="Running simulations", position=0, leave=True):
+                try:
+                    result = it.next(timeout=300)  # Timeout set to 5 minutes per task
+                    results.append(result)
+                except TimeoutError:
+                    print("A task has timed out. Skipping this task.")
+                    continue  # Skip the hanging task and move on to the next one
+        except Exception as e:
+            print(f"An error occurred: {e}")
+        finally:
+            pool.close()
+            pool.join()
+    
+    
+    df_full = pd.DataFrame(results)
     df_full.to_csv("/disk/data/youssef/scripts/xrb-population/results/table_g"+str(args.gamma)+"_T"+str(args.temp)+"_a"+str(args.a)+"_m"+str(args.mass)+"_i"+str(args.inc)+"_r"+str(args.ratio_disk_to_tot)+"_e"+str(args.exposure)+"_full.csv", index=False)
 
     for nH_value in nH_list:
@@ -220,4 +232,4 @@ if __name__ == "__main__":
 
     end_time = time.perf_counter()
     total_time = end_time - start_time
-    print(f"The loop took {total_time} seconds to complete.")
+    print(f"The script took {total_time} seconds to complete.")
