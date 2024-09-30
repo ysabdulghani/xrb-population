@@ -1,0 +1,15 @@
+parallel leven 2
+parallel error 2
+mo tbabs*(po+ezdiskbb)
+0.5,0
+2.3
+0.1
+0.7
+5000
+fakeit gx339-4_g_low_bgd.pi & gx339-4_g_low.rsp & y & & test.fak & 1000, 1, 1000
+ftgrouppha test.fak backfile=test_bkg.fak test_binned.fak snmin 3
+data test_binned.fak
+ignore bad
+ignore **-2.0 20.0-**
+fit
+err 1-5
