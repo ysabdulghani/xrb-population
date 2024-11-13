@@ -180,7 +180,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     d_list = [1,2,3,4,5,6,8,12,18,26]
-    nH_list = [0.1,0.5,5,10]
+    nH_list = [0.1]
 
     # d_list = [2]
     # nH_list = [1.0]
@@ -212,7 +212,7 @@ if __name__ == "__main__":
     
     
     df_full = pd.DataFrame(results)
-    df_full.to_csv("/disk/data/youssef/scripts/xrb-population/results/table_g"+str(args.gamma)+"_T"+str(args.temp)+"_a"+str(args.a)+"_m"+str(args.mass)+"_i"+str(args.inc)+"_r"+str(args.ratio_disk_to_tot)+"_e"+str(args.exposure)+"_full.csv", index=False)
+    df_full.to_csv("/disk/data/youssef/scripts/xrb-population/results/table_g"+str(args.gamma)+"_T"+str(args.temp)+"_a"+str(args.a)+"_m"+str(args.mass)+"_i"+str(args.inc)+"_r"+str(args.ratio_disk_to_tot)+"_e"+str(args.exposure)+"_full_1nH.csv", index=False)
 
     table_red = []
 
@@ -239,7 +239,7 @@ if __name__ == "__main__":
             })
 
     df_red = pd.DataFrame(table_red)
-    df_red.to_csv("/disk/data/youssef/scripts/xrb-population/results/table_g"+str(args.gamma)+"_T"+str(args.temp)+"_a"+str(args.a)+"_m"+str(args.mass)+"_i"+str(args.inc)+"_r"+str(args.ratio_disk_to_tot)+"_e"+str(args.exposure)+".csv", index=False)
+    df_red.to_csv("/disk/data/youssef/scripts/xrb-population/results/table_g"+str(args.gamma)+"_T"+str(args.temp)+"_a"+str(args.a)+"_m"+str(args.mass)+"_i"+str(args.inc)+"_r"+str(args.ratio_disk_to_tot)+"_e"+str(args.exposure)+"_1nH.csv", index=False)
 
     command = f'rm -rf gGR_gNT_J1655.h5'
     process = subprocess.Popen(command, shell=True)
