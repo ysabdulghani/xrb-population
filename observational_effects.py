@@ -10,7 +10,7 @@ from xspec_simulations import *
 import random
 import urllib
 import h5py
-import subprocess
+import subprocess 
 
 def idx_of_value_from_grid(grid,value,atol=1e-08,verbose=False):
     """
@@ -135,6 +135,9 @@ def scale_powerlaw_norm(gamma,temp,ezdiskbb_norm,ratio_pl_to_disk):
    powerlaw_flux = m.flux[0]
    pl_norm = (ezdiskbb_flux * ratio_pl_to_disk) / powerlaw_flux
 
+   AllModels.clear()
+   AllData.clear()
+
    return pl_norm
 
 def run_simulation(arguments):
@@ -149,7 +152,10 @@ def run_simulation(arguments):
 
     result = {"nH": nH_value, "d": d, "red_chi_squared": None, "gamma": None, "power_norm_fake": powerlaw_norm, "power_norm_fit": None, "temp": None, "disk_norm_fake": ezdiskbb_norm, "disk_norm_fit": None, "error_disk_norm_low": None, "error_disk_norm_up": None, "d_fit": None, "error_d_low": None , "error_d_up": None, "frac_uncert": None}
 
-    sim1 = simulation("tbabs*(po+ezdiskbb)",'maxi',{1: nH_value, 2:args.gamma, 3: powerlaw_norm, 4: args.temp, 5: ezdiskbb_norm},{1: str(nH_value) + ",0", 2: gamma_fit_range, 4: ',,0.1,0.1'})
+    AllModels.clear()
+    AllData.clear()
+    
+    sim1 = simulation("tbabs*(po+ezdiskbb)",args.instrument,{1: nH_value, 2:args.gamma, 3: powerlaw_norm, 4: args.temp, 5: ezdiskbb_norm},{1: str(nH_value) + ",0", 2: gamma_fit_range, 4: ',,0.1,0.1'})
     m = sim1.run(id=iteration,exposure=args.exposure,backExposure=args.exposure)
 
     try:
@@ -175,6 +181,7 @@ if __name__ == "__main__":
     parser.add_argument('inc', type=float)
     parser.add_argument('ratio_disk_to_tot', type=float)
     parser.add_argument('exposure', type=float)
+    parser.add_argument('instrument', type=str)
 
     # Parse the argument
     args = parser.parse_args()
@@ -190,7 +197,7 @@ if __name__ == "__main__":
     all_args = []
     for nH_value in nH_list:
         for d in d_list: 
-            for iteration in range(300):
+            for iteration in range(100):
                 all_args.append((nH_value,d,args,iteration))
 
     with Pool(int(cpu_count()/2) - 1) as pool:  # Use all but one CPU core   
@@ -212,8 +219,8 @@ if __name__ == "__main__":
     
     
     df_full = pd.DataFrame(results)
-    df_full.to_csv("/disk/data/youssef/scripts/xrb-population/results/table_g"+str(args.gamma)+"_T"+str(args.temp)+"_a"+str(args.a)+"_m"+str(args.mass)+"_i"+str(args.inc)+"_r"+str(args.ratio_disk_to_tot)+"_e"+str(args.exposure)+"_full.csv", index=False)
-
+    df_full.to_csv("/disk/data/youssef/scripts/xrb-population/results/"+str(args.instrument)+"_results/table_g"+str(args.gamma)+"_T"+str(args.temp)+"_a"+str(args.a)+"_m"+str(args.mass)+"_i"+str(args.inc)+"_r"+str(args.ratio_disk_to_tot)+"_e"+str(args.exposure)+"_full.csv", index=False)
+    
     table_red = []
 
     for nH_value in nH_list:
@@ -239,7 +246,7 @@ if __name__ == "__main__":
             })
 
     df_red = pd.DataFrame(table_red)
-    df_red.to_csv("/disk/data/youssef/scripts/xrb-population/results/table_g"+str(args.gamma)+"_T"+str(args.temp)+"_a"+str(args.a)+"_m"+str(args.mass)+"_i"+str(args.inc)+"_r"+str(args.ratio_disk_to_tot)+"_e"+str(args.exposure)+".csv", index=False)
+    df_red.to_csv("/disk/data/youssef/scripts/xrb-population/results/"+str(args.instrument)+"_results/table_g"+str(args.gamma)+"_T"+str(args.temp)+"_a"+str(args.a)+"_m"+str(args.mass)+"_i"+str(args.inc)+"_r"+str(args.ratio_disk_to_tot)+"_e"+str(args.exposure)+".csv", index=False)
 
     command = f'rm -rf gGR_gNT_J1655.h5'
     process = subprocess.Popen(command, shell=True)
