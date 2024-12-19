@@ -167,3 +167,4 @@ batch*.py
 *.png
 *.pdf
 *.csv
+*.npy
