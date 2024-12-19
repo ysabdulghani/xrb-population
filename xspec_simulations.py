@@ -22,13 +22,13 @@ class simulation:
         if instrument == 'maxi': # Will need to change this part according to your need
             self.energyRange_low = '2.0'
             self.energyRange_high= '20.0'
-            self.responseFilename =  "gx339-4_g_low.rsp" # Need to be short name and in same directory where your run simulation
-            self.backgroundFilename = "gx339-4_g_low_bgd.pi"
+            self.responseFilename =  "sim_files/gx339-4_g_low.rsp" # Need to be short name and in same directory where your run simulation
+            self.backgroundFilename = "sim_files/gx339-4_g_low_bgd.pi"
         elif instrument == 'xrt':
             self.energyRange_low = '0.7'
             self.energyRange_high= '10.0'
-            self.responseFilename =  "swxwt0to2s6_20131212v015.rmf" # Need to be short name and in same directory where your run simulation
-            self.backgroundFilename = "00010627114bgd_wt.pha"
+            self.responseFilename =  "sim_files/swxwt0to2s6_20131212v015.rmf" # Need to be short name and in same directory where your run simulation
+            self.backgroundFilename = "sim_files/00010627013bgd_wt.pha"
         else:
             raise ValueError('Only maxi or xrt allowed.')
 
