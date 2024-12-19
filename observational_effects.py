@@ -10,7 +10,7 @@ from xspec_simulations import *
 import random
 import urllib
 import h5py
-import subprocess
+import subprocess 
 
 def idx_of_value_from_grid(grid,value,atol=1e-08,verbose=False):
     """
@@ -135,6 +135,9 @@ def scale_powerlaw_norm(gamma,temp,ezdiskbb_norm,ratio_pl_to_disk):
    powerlaw_flux = m.flux[0]
    pl_norm = (ezdiskbb_flux * ratio_pl_to_disk) / powerlaw_flux
 
+   AllModels.clear()
+   AllData.clear()
+
    return pl_norm
 
 def run_simulation(arguments):
@@ -147,10 +150,13 @@ def run_simulation(arguments):
 
     gamma_fit_range = "2.3,,1.7,1.7,3.0,3.0"
 
-    sim1 = simulation("tbabs*(po+ezdiskbb)",'maxi',{1: nH_value, 2:args.gamma, 3: powerlaw_norm, 4: args.temp, 5: ezdiskbb_norm},{1: str(nH_value) + ",0", 2: gamma_fit_range, 4: ',,0.1,0.1'})
-    m = sim1.run(id=iteration,exposure=args.exposure,backExposure=args.exposure)
-
     result = {"nH": nH_value, "d": d, "red_chi_squared": None, "gamma": None, "power_norm_fake": powerlaw_norm, "power_norm_fit": None, "temp": None, "disk_norm_fake": ezdiskbb_norm, "disk_norm_fit": None, "error_disk_norm_low": None, "error_disk_norm_up": None, "d_fit": None, "error_d_low": None , "error_d_up": None, "frac_uncert": None}
+
+    AllModels.clear()
+    AllData.clear()
+    
+    sim1 = simulation("tbabs*(po+ezdiskbb)",args.instrument,{1: nH_value, 2:args.gamma, 3: powerlaw_norm, 4: args.temp, 5: ezdiskbb_norm},{1: str(nH_value) + ",0", 2: gamma_fit_range, 4: ',,0.1,0.1'})
+    m = sim1.run(id=iteration,exposure=args.exposure,backExposure=args.exposure)
 
     try:
         result.update({"red_chi_squared": Fit.statistic / Fit.dof, "gamma": m.powerlaw.PhoIndex.values[0], "power_norm_fit": m.powerlaw.norm.values[0], "temp": m.ezdiskbb.T_max.values[0], "disk_norm_fit": m.ezdiskbb.norm.values[0], "error_disk_norm_low": m.ezdiskbb.norm.error[0], "error_disk_norm_up": m.ezdiskbb.norm.error[1], "d_fit": to_d(m.ezdiskbb.norm.values[0],args.mass,args.a,args.inc,limb_dark=True),"error_d_low": to_d(m.ezdiskbb.norm.error[1],args.mass,args.a,args.inc,limb_dark=True),"error_d_up": to_d(m.ezdiskbb.norm.error[0],args.mass,args.a,args.inc,limb_dark=True), "frac_uncert": ((to_d(m.ezdiskbb.norm.values[0],args.mass,args.a,args.inc,limb_dark=True)- to_d(m.ezdiskbb.norm.error[1],args.mass,args.a,args.inc,limb_dark=True)) + (to_d(m.ezdiskbb.norm.error[0],args.mass,args.a,args.inc,limb_dark=True)- to_d(m.ezdiskbb.norm.values[0],args.mass,args.a,args.inc,limb_dark=True)) / 2) / (to_d(m.ezdiskbb.norm.values[0],args.mass,args.a,args.inc,limb_dark=True))})
@@ -175,18 +181,16 @@ if __name__ == "__main__":
     parser.add_argument('inc', type=float)
     parser.add_argument('ratio_disk_to_tot', type=float)
     parser.add_argument('exposure', type=float)
+    parser.add_argument('instrument', type=str)
 
     # Parse the argument
     args = parser.parse_args()
 
     d_list = [1,2,3,4,5,6,8,12,18,26]
-    nH_list = [0.5,5,10]
+    nH_list = [0.1,0.5,5,10]
 
     # d_list = [2]
     # nH_list = [1.0]
-
-    table_full = []
-    table_red = []
 
     start_time = time.perf_counter()
 
@@ -202,7 +206,7 @@ if __name__ == "__main__":
             it = pool.imap(run_simulation, all_args, chunksize=1)
             for _ in tqdm(range(len(all_args)), desc="Running simulations", position=0, leave=True):
                 try:
-                    result = it.next(timeout=300)  # Timeout set to 5 minutes per task
+                    result = it.next(timeout=30)  # Timeout set to 30 sec per task
                     results.append(result)
                 except TimeoutError:
                     print("A task has timed out. Skipping this task.")
@@ -210,23 +214,46 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"An error occurred: {e}")
         finally:
-            pool.close()
+            pool.terminate()
             pool.join()
     
+    os.makedirs("results/"+str(args.instrument)+"_results", exist_ok=True)
     
     df_full = pd.DataFrame(results)
-    df_full.to_csv("/disk/data/youssef/scripts/xrb-population/results/table_g"+str(args.gamma)+"_T"+str(args.temp)+"_a"+str(args.a)+"_m"+str(args.mass)+"_i"+str(args.inc)+"_r"+str(args.ratio_disk_to_tot)+"_e"+str(args.exposure)+"_full.csv", index=False)
+    df_full.to_csv("results/"+str(args.instrument)+"_results/table_g"+str(args.gamma)+"_T"+str(args.temp)+"_a"+str(args.a)+"_m"+str(args.mass)+"_i"+str(args.inc)+"_r"+str(args.ratio_disk_to_tot)+"_e"+str(args.exposure)+"_full.csv", index=False)
+    
+    table_red = []
 
     for nH_value in nH_list:
         for d in d_list: 
             filtered_results = [res for res in results if res["d"] == d and res["nH"] == nH_value]
             df = pd.DataFrame(filtered_results)
-            table_red.append({"nH": nH_value, "red_chi_squared": df["red_chi_squared"].median(), "gamma": df["gamma"].median(), "power_norm_fake": filtered_results[0]["power_norm_fake"], "power_norm_fit": df["power_norm_fit"].median(), "temp": df["temp"].median(), "disk_norm_fake": filtered_results[0]["disk_norm_fake"], "disk_norm_fit": df["disk_norm_fit"].median(), "error_disk_norm": df["disk_norm_fit"].median() - filtered_results[0]["disk_norm_fake"],"d": d,"d_fit": df["d_fit"].median(),"error_d": df["d_fit"].median() - filtered_results[0]["d"], "frac_uncert": (df["d_fit"].median() - filtered_results[0]["d"]) / filtered_results[0]["d"], "med_frac_uncert": df["frac_uncert"].median()})
+            # table_red.append({"nH": nH_value, "red_chi_squared": df["red_chi_squared"].median(), "gamma": df["gamma"].median(), "power_norm_fake": filtered_results[0]["power_norm_fake"], "power_norm_fit": df["power_norm_fit"].median(), "temp": df["temp"].median(), "disk_norm_fake": filtered_results[0]["disk_norm_fake"], "disk_norm_fit": df["disk_norm_fit"].median(), "error_disk_norm": df["disk_norm_fit"].median() - filtered_results[0]["disk_norm_fake"],"d": d,"d_fit": df["d_fit"].median(),"error_d": df["d_fit"].median() - filtered_results[0]["d"], "frac_uncert": (df["d_fit"].median() - filtered_results[0]["d"]) / filtered_results[0]["d"], "med_frac_uncert": df["frac_uncert"].median()})
+            table_red.append({
+                "nH": nH_value,
+                "red_chi_squared": df["red_chi_squared"].median() if 'red_chi_squared' in df.columns else None,
+                "gamma": df["gamma"].median() if 'gamma' in df.columns else None,
+                "power_norm_fake": filtered_results[0]["power_norm_fake"] if filtered_results else None,
+                "power_norm_fit": df["power_norm_fit"].median() if 'power_norm_fit' in df.columns else None,
+                "temp": df["temp"].median() if 'temp' in df.columns else None,
+                "disk_norm_fake": filtered_results[0]["disk_norm_fake"] if filtered_results else None,
+                "disk_norm_fit": df["disk_norm_fit"].median() if 'disk_norm_fit' in df.columns else None,
+                "error_disk_norm": (df["disk_norm_fit"].median() - filtered_results[0]["disk_norm_fake"]) if 'disk_norm_fit' in df.columns and filtered_results else None,
+                "d": d,
+                "d_fit": df["d_fit"].median() if 'd_fit' in df.columns else None,
+                "error_d": (df["d_fit"].median() - filtered_results[0]["d"]) if 'd_fit' in df.columns and filtered_results else None,
+                "frac_uncert": ((df["d_fit"].median() - filtered_results[0]["d"]) / filtered_results[0]["d"]) if 'd_fit' in df.columns and filtered_results else None,
+                "med_frac_uncert": df["frac_uncert"].median() if 'frac_uncert' in df.columns else None
+            })
 
     df_red = pd.DataFrame(table_red)
-    df_red.to_csv("/disk/data/youssef/scripts/xrb-population/results/table_g"+str(args.gamma)+"_T"+str(args.temp)+"_a"+str(args.a)+"_m"+str(args.mass)+"_i"+str(args.inc)+"_r"+str(args.ratio_disk_to_tot)+"_e"+str(args.exposure)+".csv", index=False)
+    df_red.to_csv("results/"+str(args.instrument)+"_results/table_g"+str(args.gamma)+"_T"+str(args.temp)+"_a"+str(args.a)+"_m"+str(args.mass)+"_i"+str(args.inc)+"_r"+str(args.ratio_disk_to_tot)+"_e"+str(args.exposure)+".csv", index=False)
 
     command = f'rm -rf gGR_gNT_J1655.h5'
+    process = subprocess.Popen(command, shell=True)
+    process.wait()
+
+    command = f'rm -rf fakeit_tmp*'
     process = subprocess.Popen(command, shell=True)
     process.wait()
 

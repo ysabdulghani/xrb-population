@@ -160,5 +160,11 @@ cython_debug/
 #.idea/
 results/
 
-#Batch files
+# Batch files
 batch*.py
+
+# Outputs
+*.png
+*.pdf
+*.csv
+*.npy

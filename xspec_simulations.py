@@ -23,7 +23,14 @@ class simulation:
             self.energyRange_low = '2.0'
             self.energyRange_high= '20.0'
             self.responseFilename =  "gx339-4_g_low.rsp" # Need to be short name and in same directory where your run simulation
-            self.backgroundFilename = "/disk/data/youssef/data/gx339-4/maxi/products_55520_to_55521/gx339-4_g_low_bgd.pi"
+            self.backgroundFilename = "gx339-4_g_low_bgd.pi"
+        elif instrument == 'xrt':
+            self.energyRange_low = '0.7'
+            self.energyRange_high= '10.0'
+            self.responseFilename =  "swxwt0to2s6_20131212v015.rmf" # Need to be short name and in same directory where your run simulation
+            self.backgroundFilename = "00010627114bgd_wt.pha"
+        else:
+            raise ValueError('Only maxi or xrt allowed.')
 
     def run(self,id='',**kwargs):
 
@@ -40,7 +47,7 @@ class simulation:
         '''
         
         AllModels.clear()
-        AllData.clear()
+        
 
         Model(self.model,setPars=self.sim_params_dic)
 
@@ -53,7 +60,7 @@ class simulation:
         # command = f'ftgrouppha fakeit_tmp_'+str(id)+'.pha backfile=fakeit_tmp_'+str(id)+'_bkg.pha fakeit_tmp_'+str(id)+'_binned.pha snmin 3'
         # process = subprocess.Popen(command, shell=True)
         # process.wait()
-
+        AllData.clear()
         s1 = Spectrum("fakeit_tmp_"+str(id)+"_binned.pha")
         AllData.ignore("bad")
         s1.ignore("**-"+self.energyRange_low+","+self.energyRange_high+"-**")
