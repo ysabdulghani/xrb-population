@@ -10,7 +10,7 @@ from xspec_simulations import *
 import random
 import urllib
 import h5py
-import subprocess 
+import subprocess
 
 def idx_of_value_from_grid(grid,value,atol=1e-08,verbose=False):
     """
@@ -200,7 +200,7 @@ if __name__ == "__main__":
             for iteration in range(300):
                 all_args.append((nH_value,d,args,iteration))
 
-    with Pool(int(cpu_count()/2) - 1) as pool:  # Use all but one CPU core   
+    with Pool(50) as pool:  # Use all but one CPU core   
         results = []
         try:
             it = pool.imap(run_simulation, all_args, chunksize=1)
@@ -210,6 +210,9 @@ if __name__ == "__main__":
                     results.append(result)
                 except TimeoutError:
                     print("A task has timed out. Skipping this task.")
+                    continue  # Skip the hanging task and move on to the next one
+                except Exception as e:
+                    print(f"A task has errored out becasue of {e}. Skipping this task.")
                     continue  # Skip the hanging task and move on to the next one
         except Exception as e:
             print(f"An error occurred: {e}")
