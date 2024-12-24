@@ -168,3 +168,5 @@ batch*.py
 *.pdf
 *.csv
 *.npy
+*.err
+*.out
