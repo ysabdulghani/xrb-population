@@ -28,7 +28,7 @@ class simulation:
             self.energyRange_low = '0.7'
             self.energyRange_high= '10.0'
             self.responseFilename =  "sim_files/swxwt0to2s6_20131212v015.rmf" # Need to be short name and in same directory where your run simulation
-            self.backgroundFilename = "sim_files/00010627013bgd_wt.pha"
+            self.backgroundFilename = "sim_files/00010627114bgd_wt.pha"
         else:
             raise ValueError('Only maxi or xrt allowed.')
 
