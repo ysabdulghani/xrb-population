@@ -170,3 +170,6 @@ batch*.py
 *.npy
 *.err
 *.out
+
+#tmp folders
+tmp*/
