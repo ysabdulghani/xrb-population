@@ -142,7 +142,7 @@ def scale_powerlaw_norm(gamma,temp,ezdiskbb_norm,ratio_pl_to_disk):
 
 def run_simulation(arguments):
     Xset.seed = random.randint(0, 10000)
-    nH_value, d, args, iteration= arguments
+    nH_value, d, args, iteration, tmp_dir = arguments
 
     ezdiskbb_norm = to_norm(d,args.mass,args.a,args.inc,limb_dark=True)
 
@@ -156,7 +156,7 @@ def run_simulation(arguments):
     AllData.clear()
     
     sim1 = simulation("tbabs*(po+ezdiskbb)",args.instrument,{1: nH_value, 2:args.gamma, 3: powerlaw_norm, 4: args.temp, 5: ezdiskbb_norm},{1: str(nH_value) + ",0", 2: gamma_fit_range, 4: ',,0.1,0.1'})
-    m = sim1.run(id=iteration,exposure=args.exposure,backExposure=args.exposure)
+    m = sim1.run(id=iteration,spec_dir=tmp_dir,exposure=args.exposure,backExposure=args.exposure)
 
     try:
         result.update({"red_chi_squared": Fit.statistic / Fit.dof, "gamma": m.powerlaw.PhoIndex.values[0], "power_norm_fit": m.powerlaw.norm.values[0], "temp": m.ezdiskbb.T_max.values[0], "disk_norm_fit": m.ezdiskbb.norm.values[0], "error_disk_norm_low": m.ezdiskbb.norm.error[0], "error_disk_norm_up": m.ezdiskbb.norm.error[1], "d_fit": to_d(m.ezdiskbb.norm.values[0],args.mass,args.a,args.inc,limb_dark=True),"error_d_low": to_d(m.ezdiskbb.norm.error[1],args.mass,args.a,args.inc,limb_dark=True),"error_d_up": to_d(m.ezdiskbb.norm.error[0],args.mass,args.a,args.inc,limb_dark=True), "frac_uncert": ((to_d(m.ezdiskbb.norm.values[0],args.mass,args.a,args.inc,limb_dark=True)- to_d(m.ezdiskbb.norm.error[1],args.mass,args.a,args.inc,limb_dark=True)) + (to_d(m.ezdiskbb.norm.error[0],args.mass,args.a,args.inc,limb_dark=True)- to_d(m.ezdiskbb.norm.values[0],args.mass,args.a,args.inc,limb_dark=True)) / 2) / (to_d(m.ezdiskbb.norm.values[0],args.mass,args.a,args.inc,limb_dark=True))})
@@ -195,30 +195,57 @@ if __name__ == "__main__":
     start_time = time.perf_counter()
 
     all_args = []
+    
+    try:
+        tmp_dir_name = "tmp_"+str(random.randint(0, 10000))
+        os.makedirs(tmp_dir_name)
+        print("Made directory "+tmp_dir_name)
+    except:
+        print("Making directory "+tmp_dir_name+" failed will draw another random number")
+        tmp_dir_name = "tmp_"+str(random.randint(0, 10000))
+        os.makedirs(tmp_dir_name)
+        print("Made directory "+tmp_dir_name)
+
+    counter = 0  # Initialize a counter
+
+    all_args = []
     for nH_value in nH_list:
         for d in d_list: 
             for iteration in range(300):
-                all_args.append((nH_value,d,args,iteration))
+                unique_iteration = counter  # Use the counter as a unique identifier
+                all_args.append((nH_value, d, args, unique_iteration, tmp_dir_name))
+                counter += 1
 
-    with Pool(50) as pool:  # Use all but one CPU core   
+    with Pool(50) as pool:  # Use all but one CPU core
         results = []
+        timeout_counter = 0  # Counter for consecutive timeouts
+        max_consecutive_timeouts = 301  # Maximum allowed consecutive timeouts
+
         try:
             it = pool.imap(run_simulation, all_args, chunksize=1)
             for _ in tqdm(range(len(all_args)), desc="Running simulations", position=0, leave=True):
+                if timeout_counter > max_consecutive_timeouts:
+                    print("Maximum consecutive timeouts exceeded. Breaking the loop.")
+                    break
+
                 try:
                     result = it.next(timeout=30)  # Timeout set to 30 sec per task
                     results.append(result)
+                    timeout_counter = 0  # Reset counter on successful task
                 except TimeoutError:
-                    print("A task has timed out. Skipping this task.")
+                    timeout_counter += 1
+                    print(f"Timeout {timeout_counter}: A task has timed out. Skipping this task.")
                     continue  # Skip the hanging task and move on to the next one
                 except Exception as e:
-                    print(f"A task has errored out becasue of {e}. Skipping this task.")
+                    timeout_counter = 0  # Reset counter for other exceptions
+                    print(f"A task has errored out because of {e}. Skipping this task.")
                     continue  # Skip the hanging task and move on to the next one
         except Exception as e:
             print(f"An error occurred: {e}")
         finally:
             pool.terminate()
             pool.join()
+
     
     os.makedirs("results/"+str(args.instrument)+"_results", exist_ok=True)
     
@@ -252,11 +279,11 @@ if __name__ == "__main__":
     df_red = pd.DataFrame(table_red)
     df_red.to_csv("results/"+str(args.instrument)+"_results/table_g"+str(args.gamma)+"_T"+str(args.temp)+"_a"+str(args.a)+"_m"+str(args.mass)+"_i"+str(args.inc)+"_r"+str(args.ratio_disk_to_tot)+"_e"+str(args.exposure)+".csv", index=False)
 
-    command = f'rm -rf gGR_gNT_J1655.h5'
-    process = subprocess.Popen(command, shell=True)
-    process.wait()
+    # command = f'rm -rf gGR_gNT_J1655.h5'
+    # process = subprocess.Popen(command, shell=True)
+    # process.wait()
 
-    command = f'rm -rf fakeit_tmp*'
+    command = f'rm -rf '+tmp_dir_name
     process = subprocess.Popen(command, shell=True)
     process.wait()
 

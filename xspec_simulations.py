@@ -32,7 +32,7 @@ class simulation:
         else:
             raise ValueError('Only maxi or xrt allowed.')
 
-    def run(self,id='',**kwargs):
+    def run(self,id='',spec_dir='',**kwargs):
 
         '''
         Perform a simulation run (fake a spectrum and then fit it)
@@ -51,17 +51,17 @@ class simulation:
 
         Model(self.model,setPars=self.sim_params_dic)
 
-        fake_settings = FakeitSettings(response=self.responseFilename,background=self.backgroundFilename,fileName="fakeit_tmp_"+str(id)+".pha",**kwargs)
+        fake_settings = FakeitSettings(response=self.responseFilename,background=self.backgroundFilename,fileName=spec_dir+"/fakeit_tmp_"+str(id)+".pha",**kwargs)
         AllData.fakeit(1, fake_settings, applyStats=True)
 
         with hsp.utils.local_pfiles_context():
-            hsp.ftgrouppha(infile='fakeit_tmp_'+str(id)+'.pha',backfile='fakeit_tmp_'+str(id)+'_bkg.pha',outfile='fakeit_tmp_'+str(id)+'_binned.pha',grouptype='snmin',groupscale='3')
+            hsp.ftgrouppha(infile=spec_dir+'/fakeit_tmp_'+str(id)+'.pha',backfile=spec_dir+'/fakeit_tmp_'+str(id)+'_bkg.pha',outfile=spec_dir+'/fakeit_tmp_'+str(id)+'_binned.pha',grouptype='snmin',groupscale='3')
 
         # command = f'ftgrouppha fakeit_tmp_'+str(id)+'.pha backfile=fakeit_tmp_'+str(id)+'_bkg.pha fakeit_tmp_'+str(id)+'_binned.pha snmin 3'
         # process = subprocess.Popen(command, shell=True)
         # process.wait()
         AllData.clear()
-        s1 = Spectrum("fakeit_tmp_"+str(id)+"_binned.pha")
+        s1 = Spectrum(spec_dir+"/fakeit_tmp_"+str(id)+"_binned.pha")
         AllData.ignore("bad")
         s1.ignore("**-"+self.energyRange_low+","+self.energyRange_high+"-**")
         AllModels.clear()
@@ -77,29 +77,8 @@ class simulation:
         except:
             pass
         
-        command = f'rm -rf fakeit_tmp_'+str(id)+'.pha fakeit_tmp_'+str(id)+'_bkg.pha fakeit_tmp_'+str(id)+'_binned.pha snmin 3'
+        command = f'rm -rf '+spec_dir+'/fakeit_tmp_'+str(id)+'.pha '+spec_dir+'/fakeit_tmp_'+str(id)+'_bkg.pha '+spec_dir+'/fakeit_tmp_'+str(id)+'_binned.pha'
         process = subprocess.Popen(command, shell=True)
         process.wait()
 
         return fitModel
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
