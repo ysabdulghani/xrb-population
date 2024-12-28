@@ -4,13 +4,14 @@ import os
 import pandas as pd
 import numpy as np
 import time
-from multiprocessing import Pool, cpu_count, TimeoutError
+from multiprocessing import Pool, cpu_count, TimeoutError, set_start_method
 from tqdm import tqdm
 from xspec_simulations import *
 import random
 import urllib
 import h5py
 import subprocess
+import tempfile
 
 def idx_of_value_from_grid(grid,value,atol=1e-08,verbose=False):
     """
@@ -165,12 +166,64 @@ def run_simulation(arguments):
 
     return result
 
+
+
+def main(all_args):
+    # Choose either a fixed size or dynamic CPU usage
+    max_cores = int(os.environ.get('SLURM_CPUS_PER_TASK'))
+    # processes = max(1, max_cores - 1)
+    processes = 100  # Example: up to 100 or CPU count - 1
+    print(f"Starting pool with {processes} processes")
+
+    results = []
+    timed_out_tasks = []
+    errored_tasks = []
+    timeout_counter = 0
+    max_consecutive_timeouts = 10
+
+    with Pool() as pool:
+        it = pool.imap(run_simulation, all_args, chunksize=1)
+        
+        # Using tqdm in a context manager
+        with tqdm(total=len(all_args), desc="Running simulations") as pbar:
+            
+            for idx in range(len(all_args)):
+
+                if timeout_counter > max_consecutive_timeouts:
+                    print("Maximum consecutive timeouts exceeded. Breaking the loop.")
+                    break
+                try:
+                    # Attempt to fetch next result with a timeout
+                    result = it.next(timeout=30)
+                    results.append(result)
+                    timeout_counter = 0  # Reset on success
+                    pbar.update(1)  # Manually update progress bar by 1
+
+                except TimeoutError:
+                    timeout_counter += 1
+                    timed_out_tasks.append(all_args[idx])  # Track which arg timed out
+                    print(f"Timeout {timeout_counter}: iteration {idx} timed out. Skipping.")
+                    pbar.update(1)  # Even on timeout, we processed one "slot"
+                    continue
+                except Exception as e:
+                    timeout_counter = 0  # Reset for non-timeout exceptions
+                    errored_tasks.append((all_args[idx], str(e)))
+                    print(f"Task index {idx} errored out ({e}). Skipping.")
+                    pbar.update(1)
+                    continue
+
+    print("Loop finished. Returning results.")
+    return results, timed_out_tasks, errored_tasks
+
 if __name__ == "__main__":
 
-    Xset.parallel.leven = 2
-    Xset.parallel.error = 2
+    # set_start_method('spawn')
+
+    Xset.parallel.leven = 1
+    Xset.parallel.error = 1
     Xset.chatter = 0
     Xset.logChatter = 0
+    Xset.allowPrompting = False
 
     
     parser = argparse.ArgumentParser(description='Tests nH effect for different distance on fake spectra given a gamma, temp, spin (a), mass, inclination (inc), ratio_disk_to_pl, and spectrum exposure')
@@ -196,15 +249,8 @@ if __name__ == "__main__":
 
     all_args = []
     
-    try:
-        tmp_dir_name = "tmp_"+str(random.randint(0, 10000))
-        os.makedirs(tmp_dir_name)
-        print("Made directory "+tmp_dir_name)
-    except:
-        print("Making directory "+tmp_dir_name+" failed will draw another random number")
-        tmp_dir_name = "tmp_"+str(random.randint(0, 10000))
-        os.makedirs(tmp_dir_name)
-        print("Made directory "+tmp_dir_name)
+    tmp_dir_name = tempfile.mkdtemp(prefix="tmp_", dir=".")
+    print(f"Created temporary directory: {tmp_dir_name}")
 
     counter = 0  # Initialize a counter
 
@@ -216,37 +262,8 @@ if __name__ == "__main__":
                 all_args.append((nH_value, d, args, unique_iteration, tmp_dir_name))
                 counter += 1
 
-    with Pool(50) as pool:  # Use all but one CPU core
-        results = []
-        timeout_counter = 0  # Counter for consecutive timeouts
-        max_consecutive_timeouts = 301  # Maximum allowed consecutive timeouts
+    results, timeouts, errors = main(all_args)
 
-        try:
-            it = pool.imap(run_simulation, all_args, chunksize=1)
-            for _ in tqdm(range(len(all_args)), desc="Running simulations", position=0, leave=True):
-                if timeout_counter > max_consecutive_timeouts:
-                    print("Maximum consecutive timeouts exceeded. Breaking the loop.")
-                    break
-
-                try:
-                    result = it.next(timeout=30)  # Timeout set to 30 sec per task
-                    results.append(result)
-                    timeout_counter = 0  # Reset counter on successful task
-                except TimeoutError:
-                    timeout_counter += 1
-                    print(f"Timeout {timeout_counter}: A task has timed out. Skipping this task.")
-                    continue  # Skip the hanging task and move on to the next one
-                except Exception as e:
-                    timeout_counter = 0  # Reset counter for other exceptions
-                    print(f"A task has errored out because of {e}. Skipping this task.")
-                    continue  # Skip the hanging task and move on to the next one
-        except Exception as e:
-            print(f"An error occurred: {e}")
-        finally:
-            pool.terminate()
-            pool.join()
-
-    
     os.makedirs("results/"+str(args.instrument)+"_results", exist_ok=True)
     
     df_full = pd.DataFrame(results)
@@ -258,7 +275,6 @@ if __name__ == "__main__":
         for d in d_list: 
             filtered_results = [res for res in results if res["d"] == d and res["nH"] == nH_value]
             df = pd.DataFrame(filtered_results)
-            # table_red.append({"nH": nH_value, "red_chi_squared": df["red_chi_squared"].median(), "gamma": df["gamma"].median(), "power_norm_fake": filtered_results[0]["power_norm_fake"], "power_norm_fit": df["power_norm_fit"].median(), "temp": df["temp"].median(), "disk_norm_fake": filtered_results[0]["disk_norm_fake"], "disk_norm_fit": df["disk_norm_fit"].median(), "error_disk_norm": df["disk_norm_fit"].median() - filtered_results[0]["disk_norm_fake"],"d": d,"d_fit": df["d_fit"].median(),"error_d": df["d_fit"].median() - filtered_results[0]["d"], "frac_uncert": (df["d_fit"].median() - filtered_results[0]["d"]) / filtered_results[0]["d"], "med_frac_uncert": df["frac_uncert"].median()})
             table_red.append({
                 "nH": nH_value,
                 "red_chi_squared": df["red_chi_squared"].median() if 'red_chi_squared' in df.columns else None,
@@ -279,10 +295,6 @@ if __name__ == "__main__":
     df_red = pd.DataFrame(table_red)
     df_red.to_csv("results/"+str(args.instrument)+"_results/table_g"+str(args.gamma)+"_T"+str(args.temp)+"_a"+str(args.a)+"_m"+str(args.mass)+"_i"+str(args.inc)+"_r"+str(args.ratio_disk_to_tot)+"_e"+str(args.exposure)+".csv", index=False)
 
-    # command = f'rm -rf gGR_gNT_J1655.h5'
-    # process = subprocess.Popen(command, shell=True)
-    # process.wait()
-
     command = f'rm -rf '+tmp_dir_name
     process = subprocess.Popen(command, shell=True)
     process.wait()
@@ -290,3 +302,5 @@ if __name__ == "__main__":
     end_time = time.perf_counter()
     total_time = end_time - start_time
     print(f"The script took {total_time} seconds to complete.")
+    print("Timed Out:", timeouts)
+    print("Errored:", errors)
