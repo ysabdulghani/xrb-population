@@ -13,7 +13,7 @@
 
 ## Number of CPUs to allocate. Note that in the slurm, CPUs correspond to
 ## logical processors, not physical cores.
-#SBATCH --cpus-per-task=202
+#SBATCH --cpus-per-task=102
 
 #SBATCH --mem=256G
 
@@ -38,5 +38,4 @@
 # Print the name of the node
 echo "Running on node: $(hostname)"
 
-apptainer exec /home/r77m975/heasoft_docker/heasoft-v6.34.sif python observational_effects.py 2.0 1.0 0.0 8 0.0 0.9 1000 xrt
-
+apptainer exec -c --mount 'type=bind,source=/home/r77m975/xrb-population/,destination=/home/r77m975/xrb-population' --pwd /home/r77m975/xrb-population/ /home/r77m975/heasoft_docker/heasoft-v6.34.sif python observational_effects.py 1.7 1.0 0.0 8.0 60.0 0.2 5000 xrt
