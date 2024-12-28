@@ -77,8 +77,13 @@ class simulation:
         except:
             pass
         
-        command = f'rm -rf '+spec_dir+'/fakeit_tmp_'+str(id)+'.pha '+spec_dir+'/fakeit_tmp_'+str(id)+'_bkg.pha '+spec_dir+'/fakeit_tmp_'+str(id)+'_binned.pha'
-        process = subprocess.Popen(command, shell=True)
-        process.wait()
+        # command = [
+        #     'rm', '-rf',
+        #     f"{spec_dir}/fakeit_tmp_{id}.pha",
+        #     f"{spec_dir}/fakeit_tmp_{id}_bkg.pha",
+        #     f"{spec_dir}/fakeit_tmp_{id}_binned.pha"
+        # ]
+        # process = subprocess.Popen(command)
+        # process.wait(timeout=30)
 
         return fitModel
