@@ -14,8 +14,8 @@ preset_values = {
 }
 
 # Configuration
-email = "youssefabdulghani@montana.edu"
-cpus_per_task = 102
+email = "youssef.abdulghani@student.montana.edu"
+cpus_per_task = 96
 script_path = "/home/r77m975/xrb-population/observational_effects.py"
 output_dir = "/home/r77m975/xrb-population/job_files"
 outlog_base_dir = "/home/r77m975/xrb-population/out_logs"
@@ -43,11 +43,11 @@ sbatch_template = """#!/bin/bash
 #SBATCH --account=group-annelohfink
 #SBATCH --partition=nextgen
 #SBATCH --cpus-per-task={cpus_per_task}
-#SBATCH --mem=256G
+#SBATCH --mem=64G
 #SBATCH --time=2-00:00:00
 #SBATCH --job-name=xrt-simulation-job-{job_id}
-#SBATCH --output={outlog_path}/job-{job_id}-%A_%a.out
-#SBATCH --error={outlog_path}/job-{job_id}-%A_%a.err
+#SBATCH --output={outlog_path}/job-{job_id}-%A_%a-%j.out
+#SBATCH --error={outlog_path}/job-{job_id}-%A_%a-%j.err
 #SBATCH --mail-user={email}
 #SBATCH --mail-type=ALL
 #SBATCH --array=0-{array_size}
@@ -89,7 +89,7 @@ for job_id, job_combinations in enumerate(combinations_list, start=1):
     echo "Job $SLURM_JOB_ID, Task $SLURM_ARRAY_TASK_ID: Running combination $param_index: $params" >> $progress_file
 
     # Execute the command
-    apptainer exec /home/r77m975/heasoft_docker/heasoft-v6.34.sif python {script_path} $g $T $a $m $i $r $e xrt
+    apptainer exec -c --mount 'type=bind,source=/home/r77m975/xrb-population/,destination=/home/r77m975/xrb-population' --pwd /home/r77m975/xrb-population/ /home/r77m975/heasoft_docker/heasoft-v6.34.sif python {script_path} $g $T $a $m $i $r $e xrt
     """
 
     sbatch_content = sbatch_template.format(

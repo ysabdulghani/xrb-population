@@ -1,13 +1,13 @@
 #!/bin/bash
 #SBATCH --account=group-annelohfink
 #SBATCH --partition=nextgen
-#SBATCH --cpus-per-task=102
-#SBATCH --mem=256G
+#SBATCH --cpus-per-task=96
+#SBATCH --mem=64G
 #SBATCH --time=2-00:00:00
 #SBATCH --job-name=xrt-simulation-job-3
-#SBATCH --output=/home/r77m975/xrb-population/out_logs/job_3/job-3-%A_%a.out
-#SBATCH --error=/home/r77m975/xrb-population/out_logs/job_3/job-3-%A_%a.err
-#SBATCH --mail-user=youssefabdulghani@montana.edu
+#SBATCH --output=/home/r77m975/xrb-population/out_logs/job_3/job-3-%A_%a-%j.out
+#SBATCH --error=/home/r77m975/xrb-population/out_logs/job_3/job-3-%A_%a-%j.err
+#SBATCH --mail-user=youssef.abdulghani@student.montana.edu
 #SBATCH --mail-type=ALL
 #SBATCH --array=0-287
 
@@ -33,5 +33,5 @@ touch $progress_file
     echo "Job $SLURM_JOB_ID, Task $SLURM_ARRAY_TASK_ID: Running combination $param_index: $params" >> $progress_file
 
     # Execute the command
-    apptainer exec /home/r77m975/heasoft_docker/heasoft-v6.34.sif python /home/r77m975/xrb-population/observational_effects.py $g $T $a $m $i $r $e xrt
+    apptainer exec -c --mount 'type=bind,source=/home/r77m975/xrb-population/,destination=/home/r77m975/xrb-population' --pwd /home/r77m975/xrb-population/ /home/r77m975/heasoft_docker/heasoft-v6.34.sif python /home/r77m975/xrb-population/observational_effects.py $g $T $a $m $i $r $e xrt
     
