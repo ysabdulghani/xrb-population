@@ -229,7 +229,7 @@ def main(all_args):
                 script_call = " ".join(sys.argv)
                 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 with open("error_log.log", "a") as error_file:
-                        error_file.write(f"{current_time}: {script_call}: {err_msg}")
+                        error_file.write(f"{current_time}: {script_call}: {err_msg} \n")
                 break
 
             try:
@@ -264,7 +264,7 @@ def main(all_args):
                     script_call = " ".join(sys.argv)
                     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     with open("error_log.log", "a") as error_file:
-                            error_file.write(f"{current_time}: {script_call}: {err_msg}")
+                            error_file.write(f"{current_time}: {script_call}: {err_msg} \n")
 
             except Exception as e:
                 errored_tasks.append((all_args[idx], str(e)))
@@ -275,7 +275,10 @@ def main(all_args):
                 # We do NOT terminate the pool here, but you could if desired
 
     # Cleanly close any remaining pool after finishing
-    pool.close()
+    if timeout_counter > max_consecutive_timeouts:
+        pool.terminate()
+    else:
+        pool.close()
     pool.join()
 
     print("Loop finished. Returning results.")
