@@ -76,6 +76,14 @@ class simulation:
                 pass
         except:
             pass
+
+        tot_flux = None
+
+        try:
+            AllModels.calcFlux(self.energyRange_low+" "+self.energyRange_high)
+            tot_flux = s1.flux[0]
+        except:
+            pass
         
         # command = [
         #     'rm', '-rf',
@@ -86,4 +94,4 @@ class simulation:
         # process = subprocess.Popen(command)
         # process.wait(timeout=30)
 
-        return fitModel
+        return fitModel,tot_flux

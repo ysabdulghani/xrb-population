@@ -177,16 +177,16 @@ def run_simulation(arguments):
 
     gamma_fit_range = "2.3,,1.7,1.7,3.0,3.0"
 
-    result = {"nH": nH_value, "d": d, "red_chi_squared": None, "gamma": None, "power_norm_fake": powerlaw_norm, "power_norm_fit": None, "temp": None, "disk_norm_fake": ezdiskbb_norm, "disk_norm_fit": None, "error_disk_norm_low": None, "error_disk_norm_up": None, "d_fit": None, "error_d_low": None , "error_d_up": None, "frac_uncert": None}
+    result = {"nH": nH_value, "d": d, "red_chi_squared": None, "gamma": None, "power_norm_fake": powerlaw_norm, "power_norm_fit": None, "temp": None, "disk_norm_fake": ezdiskbb_norm, "disk_norm_fit": None, "error_disk_norm_low": None, "error_disk_norm_up": None, "d_fit": None, "error_d_low": None , "error_d_up": None, "frac_uncert": None,"total_flux":None}
 
     AllModels.clear()
     AllData.clear()
     
     sim1 = simulation("tbabs*(po+ezdiskbb)",args.instrument,{1: nH_value, 2:args.gamma, 3: powerlaw_norm, 4: args.temp, 5: ezdiskbb_norm},{1: str(nH_value) + ",0", 2: gamma_fit_range, 4: ',,0.1,0.1'})
-    m = sim1.run(id=iteration,spec_dir=tmp_dir,exposure=args.exposure,backExposure=args.exposure)
+    m, tot_flux = sim1.run(id=iteration,spec_dir=tmp_dir,exposure=args.exposure,backExposure=args.exposure)
 
     try:
-        result.update({"red_chi_squared": Fit.statistic / Fit.dof, "gamma": m.powerlaw.PhoIndex.values[0], "power_norm_fit": m.powerlaw.norm.values[0], "temp": m.ezdiskbb.T_max.values[0], "disk_norm_fit": m.ezdiskbb.norm.values[0], "error_disk_norm_low": m.ezdiskbb.norm.error[0], "error_disk_norm_up": m.ezdiskbb.norm.error[1], "d_fit": to_d(f,m.ezdiskbb.norm.values[0],args.mass,args.a,args.inc,limb_dark=True),"error_d_low": to_d(f,m.ezdiskbb.norm.error[1],args.mass,args.a,args.inc,limb_dark=True),"error_d_up": to_d(f,m.ezdiskbb.norm.error[0],args.mass,args.a,args.inc,limb_dark=True), "frac_uncert": ((to_d(f,m.ezdiskbb.norm.values[0],args.mass,args.a,args.inc,limb_dark=True)- to_d(f,m.ezdiskbb.norm.error[1],args.mass,args.a,args.inc,limb_dark=True)) + (to_d(f,m.ezdiskbb.norm.error[0],args.mass,args.a,args.inc,limb_dark=True)- to_d(f,m.ezdiskbb.norm.values[0],args.mass,args.a,args.inc,limb_dark=True)) / 2) / (to_d(f,m.ezdiskbb.norm.values[0],args.mass,args.a,args.inc,limb_dark=True))})
+        result.update({"red_chi_squared": Fit.statistic / Fit.dof, "gamma": m.powerlaw.PhoIndex.values[0], "power_norm_fit": m.powerlaw.norm.values[0], "temp": m.ezdiskbb.T_max.values[0], "disk_norm_fit": m.ezdiskbb.norm.values[0], "error_disk_norm_low": m.ezdiskbb.norm.error[0], "error_disk_norm_up": m.ezdiskbb.norm.error[1], "d_fit": to_d(f,m.ezdiskbb.norm.values[0],args.mass,args.a,args.inc,limb_dark=True),"error_d_low": to_d(f,m.ezdiskbb.norm.error[1],args.mass,args.a,args.inc,limb_dark=True),"error_d_up": to_d(f,m.ezdiskbb.norm.error[0],args.mass,args.a,args.inc,limb_dark=True), "frac_uncert": ((to_d(f,m.ezdiskbb.norm.values[0],args.mass,args.a,args.inc,limb_dark=True)- to_d(f,m.ezdiskbb.norm.error[1],args.mass,args.a,args.inc,limb_dark=True)) + (to_d(f,m.ezdiskbb.norm.error[0],args.mass,args.a,args.inc,limb_dark=True)- to_d(f,m.ezdiskbb.norm.values[0],args.mass,args.a,args.inc,limb_dark=True)) / 2) / (to_d(f,m.ezdiskbb.norm.values[0],args.mass,args.a,args.inc,limb_dark=True)),"total_flux":tot_flux})
     except:
             pass
 
@@ -363,7 +363,8 @@ if __name__ == "__main__":
                 "d_fit": df["d_fit"].median() if 'd_fit' in df.columns else None,
                 "error_d": (df["d_fit"].median() - filtered_results[0]["d"]) if 'd_fit' in df.columns and filtered_results else None,
                 "frac_uncert": ((df["d_fit"].median() - filtered_results[0]["d"]) / filtered_results[0]["d"]) if 'd_fit' in df.columns and filtered_results else None,
-                "med_frac_uncert": df["frac_uncert"].median() if 'frac_uncert' in df.columns else None
+                "med_frac_uncert": df["frac_uncert"].median() if 'frac_uncert' in df.columns else None,
+                "total_flux": df["total_flux"].median() if 'total_flux' in df.columns else None
             })
 
     df_red = pd.DataFrame(table_red)
