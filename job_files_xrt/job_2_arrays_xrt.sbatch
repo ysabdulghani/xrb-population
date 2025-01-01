@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH --account=group-annelohfink
-#SBATCH --partition=nextgen
+#SBATCH --partition=unsafe
 #SBATCH --cpus-per-task=96
 #SBATCH --mem=64G
 #SBATCH --time=2-00:00:00
 #SBATCH --job-name=xrt-simulation-job-2
-#SBATCH --output=/home/r77m975/xrb-population/out_logs/job_2/job-2-%A_%a-%j.out
-#SBATCH --error=/home/r77m975/xrb-population/out_logs/job_2/job-2-%A_%a-%j.err
+#SBATCH --output=/home/r77m975/xrb-population/out_logs_xrt/job_2/job-2-%A_%a-%j.out
+#SBATCH --error=/home/r77m975/xrb-population/out_logs_xrt/job_2/job-2-%A_%a-%j.err
 #SBATCH --mail-user=youssef.abdulghani@student.montana.edu
 #SBATCH --mail-type=ALL
 #SBATCH --array=0-287
@@ -14,7 +14,7 @@
 echo "Running on node: $(hostname)"
 
 # Progress tracking setup
-progress_file="/home/r77m975/xrb-population/out_logs/job_2/progress.log"
+progress_file="/home/r77m975/xrb-population/out_logs_xrt/job_2/progress.log"
 touch $progress_file
 
 # Execute commands
