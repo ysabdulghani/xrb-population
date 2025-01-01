@@ -234,7 +234,7 @@ def main(all_args):
 
             try:
                 # Attempt to get the next result with a timeout
-                result = it.next(timeout=30)
+                result = it.next(timeout=50)
                 results.append(result)
                 # Successfully got a result => reset timeout counter
                 timeout_counter = 0
@@ -247,24 +247,26 @@ def main(all_args):
                 pbar.update(1)
                 print(f"Timeout #{timeout_counter} at index={idx}. Terminating pool and restarting...")
                 idx += 1  # Skip the timed-out task
-                
-                pool.terminate()  
-                pool.join()
-                print("Pool is terminated")
+                if timeout_counter < 2:
+                    continue
+                else:
+                    pool.terminate()  
+                    pool.join()
+                    print("Pool is terminated")
 
-                try:
-                    print("Forcing grabage collection before attempting to restart pool")
-                    gc.collect()
-                    # Re-create the pool and iterator for remaining tasks
-                    print("Attempting to restart pool...")
-                    pool, it = new_pool_and_iterator(processes,idx)
-                except OSError as e:
-                    err_msg = f"Failed to restart pool due to OSError: {e}"
-                    print(err_msg)
-                    script_call = " ".join(sys.argv)
-                    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    with open("error_log.log", "a") as error_file:
-                            error_file.write(f"{current_time}: {script_call}: {err_msg} \n")
+                    try:
+                        print("Forcing grabage collection before attempting to restart pool")
+                        gc.collect()
+                        # Re-create the pool and iterator for remaining tasks
+                        print("Attempting to restart pool...")
+                        pool, it = new_pool_and_iterator(processes,idx)
+                    except OSError as e:
+                        err_msg = f"Failed to restart pool due to OSError: {e}"
+                        print(err_msg)
+                        script_call = " ".join(sys.argv)
+                        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        with open("error_log.log", "a") as error_file:
+                                error_file.write(f"{current_time}: {script_call}: {err_msg} \n")
 
             except Exception as e:
                 errored_tasks.append((all_args[idx], str(e)))
