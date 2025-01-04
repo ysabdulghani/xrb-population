@@ -22,11 +22,13 @@ class simulation:
         if instrument == 'maxi': # Will need to change this part according to your need
             self.energyRange_low = '2.0'
             self.energyRange_high= '20.0'
+            self.sourceFilename = "sim_files/gx339-4_g_low_src.pi"
             self.responseFilename =  "sim_files/gx339-4_g_low.rsp" # Need to be short name and in same directory where your run simulation
             self.backgroundFilename = "sim_files/gx339-4_g_low_bgd.pi"
         elif instrument == 'xrt':
             self.energyRange_low = '0.7'
             self.energyRange_high= '10.0'
+            self.sourceFilename = "sim_files/00010627114src_wt.pha"
             self.responseFilename =  "sim_files/swxwt0to2s6_20131212v015.rmf" # Need to be short name and in same directory where your run simulation
             self.backgroundFilename = "sim_files/00010627114bgd_wt.pha"
         else:
@@ -47,9 +49,11 @@ class simulation:
         '''
         
         AllModels.clear()
-        
+        AllData.clear()
 
         Model(self.model,setPars=self.sim_params_dic)
+
+        s1 = Spectrum(self.sourceFilename)
 
         fake_settings = FakeitSettings(response=self.responseFilename,background=self.backgroundFilename,fileName=spec_dir+"/fakeit_tmp_"+str(id)+".pha",**kwargs)
         AllData.fakeit(1, fake_settings, applyStats=True)
@@ -60,6 +64,7 @@ class simulation:
         # command = f'ftgrouppha fakeit_tmp_'+str(id)+'.pha backfile=fakeit_tmp_'+str(id)+'_bkg.pha fakeit_tmp_'+str(id)+'_binned.pha snmin 3'
         # process = subprocess.Popen(command, shell=True)
         # process.wait()
+        
         AllData.clear()
         s1 = Spectrum(spec_dir+"/fakeit_tmp_"+str(id)+"_binned.pha")
         AllData.ignore("bad")
