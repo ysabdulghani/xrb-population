@@ -173,3 +173,6 @@ batch*.py
 
 #tmp folders
 tmp*/
+
+#trial folders
+trial*
