@@ -19,17 +19,28 @@ if partition == 'priority':
     account = 'priority-annelohfink'
 else:
     account = 'group-annelohfink'
-
-# Parameters
-preset_values = {
-    'g': [1.7, 2.0, 3.0],
-    'T': [0.5, 0.7, 1.0],
-    'a': [0.0, 0.998],
-    'm': [6.0, 8.0, 10.0],
-    'i': [0.0, 60.0, 80.0],
-    'r': [0.2, 0.5, 0.9],
-    'e': [400.0, 1500.0, 10000.0]
-}
+if insturment == 'maxi':
+    # Parameters
+    preset_values = {
+        'g': [1.7, 2.0, 3.0],
+        'T': [0.5, 0.7, 1.0],
+        'a': [0.0, 0.998],
+        'm': [6.0, 8.0, 10.0],
+        'i': [0.0, 60.0, 80.0],
+        'r': [0.2, 0.5, 0.9],
+        'e': [400.0, 1500.0, 10000.0]
+    }
+else:
+        # Parameters
+    preset_values = {
+        'g': [1.7, 2.0, 3.0],
+        'T': [0.5, 0.7, 1.0],
+        'a': [0.0, 0.998],
+        'm': [6.0, 8.0, 10.0],
+        'i': [0.0, 60.0, 80.0],
+        'r': [0.2, 0.5, 0.9],
+        'e': [400.0, 1000.0, 5000.0]
+    }
 
 # Configuration
 email = "youssef.abdulghani@student.montana.edu"
@@ -37,7 +48,11 @@ cpus_per_task = 96
 script_path = "/home/r77m975/xrb-population/observational_effects.py"
 output_dir = f"/home/r77m975/xrb-population/job_files_{insturment}"
 outlog_base_dir = f"/home/r77m975/xrb-population/out_logs_{insturment}"
-time_per_combination = 600  # seconds
+if insturment == 'maxi':
+    time_per_combination = 200  # seconds
+else:
+    time_per_combination = 400  # seconds
+    
 max_job_duration = 2 * 24 * 60 * 60  # 2 days in seconds
 
 # Calculate combinations and jobs
