@@ -16,6 +16,14 @@ import sys
 import gc
 from datetime import datetime
 
+def find_peak(array):
+    if len(array) != 0:
+        counts, bins = np.histogram(array,bins='stone')
+        peak = (bins[np.argmax(counts)]+bins[np.argmax(counts)+1])/2
+    else:
+        peak = None
+    return peak
+
 def idx_of_value_from_grid(grid,value,atol=1e-08,verbose=False):
     """
     Finds the index of a specified value in a grid array with a specified absolute tolerance.
@@ -162,9 +170,6 @@ def scale_powerlaw_norm(gamma,temp,ezdiskbb_norm,ratio_pl_to_disk):
    powerlaw_flux = m.flux[0]
    pl_norm = (ezdiskbb_flux * ratio_pl_to_disk) / powerlaw_flux
 
-   AllModels.clear()
-   AllData.clear()
-
    return pl_norm
 
 def run_simulation(arguments):
@@ -178,9 +183,6 @@ def run_simulation(arguments):
     gamma_fit_range = "2.3,,1.7,1.7,3.0,3.0"
 
     result = {"nH": nH_value, "d": d, "red_chi_squared": None, "gamma": None, "power_norm_fake": powerlaw_norm, "power_norm_fit": None, "temp": None, "disk_norm_fake": ezdiskbb_norm, "disk_norm_fit": None, "error_disk_norm_low": None, "error_disk_norm_up": None, "d_fit": None, "error_d_low": None , "error_d_up": None, "frac_uncert": None,"total_flux":None}
-
-    AllModels.clear()
-    AllData.clear()
     
     sim1 = simulation("tbabs*(po+ezdiskbb)",args.instrument,{1: nH_value, 2:args.gamma, 3: powerlaw_norm, 4: args.temp, 5: ezdiskbb_norm},{1: str(nH_value) + ",0", 2: gamma_fit_range, 4: ',,0.1,0.1'})
     m, tot_flux = sim1.run(id=iteration,spec_dir=tmp_dir,exposure=args.exposure,backExposure=args.exposure)
@@ -351,6 +353,8 @@ if __name__ == "__main__":
         for d in d_list: 
             filtered_results = [res for res in results if res["d"] == d and res["nH"] == nH_value]
             df = pd.DataFrame(filtered_results)
+            peak = (find_peak(df['d_fit'].dropna().to_numpy())) if 'd_fit' in df.columns else None
+            peak_flux = (find_peak(df['total_flux'].dropna().to_numpy())) if 'total_flux' in df.columns else None
             table_red.append({
                 "nH": nH_value,
                 "red_chi_squared": df["red_chi_squared"].median() if 'red_chi_squared' in df.columns else None,
@@ -365,8 +369,12 @@ if __name__ == "__main__":
                 "d_fit": df["d_fit"].median() if 'd_fit' in df.columns else None,
                 "error_d": (df["d_fit"].median() - filtered_results[0]["d"]) if 'd_fit' in df.columns and filtered_results else None,
                 "frac_uncert": ((df["d_fit"].median() - filtered_results[0]["d"]) / filtered_results[0]["d"]) if 'd_fit' in df.columns and filtered_results else None,
+                "d_fit_peak": peak,
+                "error_d_peak": (peak-d) if peak else None,
+                "frac_uncert_peak": ((peak-d) / d) if peak else None,
                 "med_frac_uncert": df["frac_uncert"].median() if 'frac_uncert' in df.columns else None,
-                "total_flux": df["total_flux"].median() if 'total_flux' in df.columns else None
+                "total_flux": df["total_flux"].median() if 'total_flux' in df.columns else None,
+                "peak_flux": peak_flux
             })
 
     df_red = pd.DataFrame(table_red)
