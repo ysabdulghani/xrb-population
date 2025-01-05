@@ -135,9 +135,6 @@ def scale_powerlaw_norm(gamma,temp,ezdiskbb_norm,ratio_pl_to_disk):
    powerlaw_flux = m.flux[0]
    pl_norm = (ezdiskbb_flux * ratio_pl_to_disk) / powerlaw_flux
 
-   AllModels.clear()
-   AllData.clear()
-
    return pl_norm
 
 def run_simulation(arguments):
@@ -152,6 +149,11 @@ def run_simulation(arguments):
 
     result = {"nH": nH_value, "d": d, "red_chi_squared": None, "gamma": None, "power_norm_fake": powerlaw_norm, "power_norm_fit": None, "temp": None, "disk_norm_fake": ezdiskbb_norm, "disk_norm_fit": None, "error_disk_norm_low": None, "error_disk_norm_up": None, "d_fit": None, "error_d_low": None , "error_d_up": None, "frac_uncert": None}
 
+
+    AllModels.clear()
+    AllData.clear()
+    
+    
     AllModels.clear()
     AllData.clear()
     
@@ -167,8 +169,8 @@ def run_simulation(arguments):
 
 if __name__ == "__main__":
 
-    Xset.parallel.leven = 2
-    Xset.parallel.error = 2
+    Xset.parallel.leven = 1
+    Xset.parallel.error = 1
     Xset.chatter = 0
     Xset.logChatter = 0
 
@@ -197,7 +199,7 @@ if __name__ == "__main__":
     all_args = []
     for nH_value in nH_list:
         for d in d_list: 
-            for iteration in range(100):
+            for iteration in range(300):
                 all_args.append((nH_value,d,args,iteration))
 
     with Pool(int(cpu_count()/2) - 1) as pool:  # Use all but one CPU core   

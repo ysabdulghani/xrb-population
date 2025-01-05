@@ -47,7 +47,7 @@ class simulation:
         '''
         
         AllModels.clear()
-        
+        AllData.clear()
 
         Model(self.model,setPars=self.sim_params_dic)
 
