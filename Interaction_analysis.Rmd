@@ -1,0 +1,333 @@
+
+```{r}
+library('readr')
+
+distance_data <- read.csv("all_data_flat_xrt.csv")
+#summary(distance_data)
+#distance_data <- subset(distance_data, frac_uncert <= 1)
+summary(distance_data)
+```
+
+```{r}
+# myvars <- names(distance_data) %in% c("frac_uncert")
+# distance_data <- distance_data[!myvars]
+# col_names <- names(distance_data)
+```
+
+```{r}
+distance_data$distance_diff <- abs(distance_data$d - distance_data$d_fit_weighted_median) 
+distance_data$frac_uncert <- abs(distance_data$d - distance_data$d_fit_weighted_median)/distance_data$d
+distance_data <- subset(distance_data, abs(frac_uncert) <= 1)
+summary(distance_data)
+```
+
+
+```{r}
+col_names <- c("d","nH","g","T","a","m","i","r","e")
+distance_data[,col_names] <- lapply(distance_data[,col_names] , factor)
+str(distance_data)
+distance_data$log_frac_uncert <- log(distance_data$frac_uncert)
+```
+
+```{r}
+# distance_data$log_d <- log(distance_data$d)
+# distance_data$log_d_fit <- log(distance_data$d_fit)
+
+```
+
+
+```{r}
+library(catstats2)
+ggintplot(response="log_frac_uncert",groupvars = c("nH","g","a"),ptalpha=0,array=T,data=distance_data)
+```
+
+```{r}
+library(car)
+lm1 <- lm(log_frac_uncert~d+(nH+g+T+a+m+i+r+e),data=distance_data)
+plot(lm1)
+summary(lm1)
+Anova(lm1)
+vif(lm1)
+```
+
+```{r}
+library(ggResidpanel)
+model1 <- lm(log_frac_uncert~d+(nH+g+T+a+m+i+r+e)^2,data=distance_data)
+summary(model1)
+Anova(model1,test.statistic = "F")
+resid_panel(model1)
+```
+
+```{r}
+library(lme4)
+model1 <- lmer(log_frac_uncert~(nH+g+T+a+m+i+r+e)^2+(1|d),data=distance_data)
+summary(model1)
+Anova(model1)
+resid_panel(model1)
+```
+```{r}
+library(MuMIn)
+r.squaredGLMM(model1)
+```
+
+```{r}
+# Fit a full model
+full_model <- model1
+
+# Define the significance level
+alpha <- 0.05
+
+# Initialize the current model
+current_model <- full_model
+
+# Backward elimination loop
+iteration <- 1
+while (TRUE) {
+  # Get the ANOVA table
+  anova_table <- Anova(current_model,test.statistic = "F")  # Use type = 3 for Type III tests
+  
+  # Extract p-values
+  p_values <- anova_table$`Pr(>F)`
+  
+  terms <- rownames(anova_table)
+  
+  # Find the term with the highest p-value
+  max_p <- max(p_values, na.rm = TRUE)
+  
+  if (max_p > alpha) {
+    # Get the name of the term to remove
+    term_to_remove <- terms[which.max(p_values)]
+    
+    # Print progress
+    cat(sprintf(
+      "Iteration %d: Removing '%s' with p-value = %.4f\n",
+      iteration, term_to_remove, max_p
+    ))
+    
+    # Simplify formula update
+    # Safely drop the term
+    term_labels <- attr(terms(current_model), "term.labels")  # Extract terms
+    terms_to_keep <- setdiff(term_labels, term_to_remove)  # Exclude the term to remove
+    
+    # Reformulate the model with updated terms
+    updated_formula <- reformulate(terms_to_keep, response = "log_frac_uncert")
+    current_model <- lm(updated_formula, data = distance_data)
+    
+    # Increment iteration counter
+    iteration <- iteration + 1
+  } else {
+    # Exit loop if no p-values exceed the threshold
+    cat("No terms exceed the significance threshold. Backward elimination complete.\n")
+    break
+  }
+}
+
+# Final model
+#summary(current_model)
+Anova(current_model,test.statistic = "F")
+stepwise_model <- current_model
+```
+
+```{r}
+stepwise_model <- step(model1, direction = "backward", k = log(nrow(distance_data)))
+```
+```{r}
+Anova(model1)
+current_model <- lmer(log_frac_uncert~(nH+g+T+a+m+i+r+e)^2+(1|d)-i:r-m:i-m:r-a:m-g:m-nH:m-nH:i-nH:e,data=distance_data)
+Anova(current_model)
+```
+
+```{r}
+final_model <- lm(stepwise_model, data = distance_data)
+summary(final_model)
+type2_final <- Anova(final_model, type = "II")
+print(type2_final)
+resid_panel(final_model,"R")
+```
+
+```{r, fig.width=20, fig.height=20}
+library(effects)
+all_eff <- allEffects(final_model)
+names(all_eff)
+plot(allEffects(final_model), grid = T,multiline=T)
+```
+```{r}
+library(ggResidpanel)
+resid_panel(final_model,"R")
+```
+
+
+```{r}
+# library(effects)
+# library(ggplot2)
+# library(ggthemes)  # for scale_color_colorblind()
+# 
+# # If your ggplot2 version complains about numeric positions,
+# # you can try: legend.position.inside = c(0.95, 0.95)
+# theme_set(
+#   theme_minimal(base_size = 12, base_family = "sans") +
+#     theme(
+#       panel.grid.minor = element_blank(),
+#       panel.grid.major = element_line(color = "grey85"),
+#       legend.position = c(0.95, 0.95),         # position inside the plot
+#       legend.justification = c("right", "top"),
+#       legend.background = element_rect(fill = scales::alpha("white", 0.7))
+#     )
+# )
+# 
+# # Update default geom settings for consistent appearance
+# update_geom_defaults("line", list(size = 0.8))
+# update_geom_defaults("point", list(size = 2))
+# update_geom_defaults("errorbar", list(size = 0.5))
+# 
+# # Calculate all effects
+# all_eff <- allEffects(final_model)
+# 
+# # Define formal names for variables (updated)
+# custom_labels <- list(
+#   d   = "Distance (kpc)",
+#   nH  = "Hydrogen Column Density (cm^-2)",
+#   g   = "Gamma",
+#   T   = "Temperature (keV)",
+#   a   = "Spin",
+#   m   = "Mass (Solar mass)",
+#   i   = "Inclination (deg)",
+#   r   = "Disk-to-total flux ratio ",
+#   e   = "Exposure (sec)"
+# )
+# 
+# # Helper function to get formal labels for interactions
+# get_formal_label <- function(var_name) {
+#   components <- strsplit(var_name, ":")[[1]]
+#   formal_labels <- sapply(components, function(x) custom_labels[[x]])
+#   paste(formal_labels, collapse = " × ")
+# }
+# 
+# # Loop through each effect and generate plots
+# for (eff_name in names(all_eff)) {
+#   
+#   # Extract individual effect data
+#   effect_data <- as.data.frame(all_eff[[eff_name]])
+#   
+#   # Skip empty effects
+#   if (nrow(effect_data) == 0) {
+#     cat(sprintf("Skipping empty effect for '%s'\n", eff_name))
+#     next
+#   }
+#   
+#   # Identify the variable(s) involved in this effect
+#   comp_vars <- strsplit(eff_name, ":")[[1]]
+#   
+#   # Force 'd' to be a factor (or do similarly for other known categorical vars, if needed)
+#   for (v in comp_vars) {
+#     if (v == "d") {
+#       effect_data[[v]] <- factor(effect_data[[v]])
+#     }
+#   }
+#   
+#   # Get the formal x-label
+#   x_label <- get_formal_label(eff_name)
+#   
+#   # Decide how to plot based on number of variables in the effect
+#   if (length(comp_vars) == 1) {
+#     
+#     var <- comp_vars[1]
+#     
+#     # Single variable effect
+#     if (is.factor(effect_data[[var]])) {
+#       # Categorical variable: connect points with a single group
+#       p <- ggplot(effect_data, aes_string(x = var, y = "fit")) +
+#         geom_line(aes(group = 1)) +
+#         geom_point() +
+#         geom_errorbar(aes_string(ymin = "lower", ymax = "upper"), width = 0.2) +
+#         labs(x = x_label, y = "Fractional Uncertainty") +
+#         scale_color_colorblind()
+#     } else {
+#       # Numeric variable
+#       p <- ggplot(effect_data, aes_string(x = var, y = "fit")) +
+#         geom_line() +
+#         geom_point() +
+#         geom_errorbar(aes_string(ymin = "lower", ymax = "upper"), width = 0.2) +
+#         labs(x = x_label, y = "Fractional Uncertainty") +
+#         scale_color_colorblind()
+#     }
+#     
+#   } else {
+#     
+#     # Interaction effect (assume 2 vars)
+#     if (length(comp_vars) == 2) {
+#       var1 <- comp_vars[1]
+#       var2 <- comp_vars[2]
+#       
+#       p <- ggplot(effect_data, aes_string(
+#         x = var1, y = "fit", color = var2, group = var2
+#       )) +
+#         geom_line() +
+#         geom_point() +
+#         geom_errorbar(aes_string(ymin = "lower", ymax = "upper"), width = 0.2) +
+#         labs(
+#           x = get_formal_label(var1),
+#           y = "Fractional Uncertainty",
+#           color = get_formal_label(var2)
+#         ) +
+#         scale_color_colorblind()
+#       
+#     } else {
+#       # More than 2 variables in the interaction
+#       cat("Interaction with more than 2 variables, not plotted.\n")
+#       next
+#     }
+#   }
+#   
+#   # Print the plot to the viewer
+#   print(p)
+#   
+#   # Example of saving at MNRAS single-column size: ~3.3" wide x 2.5" tall, 600 dpi
+#   # ggsave(
+#   #   filename = paste0("effect_", gsub(":", "_", eff_name), ".png"),
+#   #   plot = p,
+#   #   width = 3.3,    # inches (~84 mm)
+#   #   height = 2.5,   # inches
+#   #   dpi = 600
+#   # )
+# }
+
+
+```
+
+
+```{r}
+library(effects)
+
+# Assuming you've already fit a model called 'final_model'
+all_eff <- allEffects(final_model)
+
+# Convert each effect object into a data frame and store them in a list
+effect_data_list <- lapply(all_eff, as.data.frame)
+
+# 3. Create a folder called "effects_data" if it doesn't exist
+dir.create("effects_data", showWarnings = FALSE)
+
+# 4. Write each effect’s data frame to its own CSV inside "effects_data"
+for (eff_name in names(effect_data_list)) {
+  # The data frame for this effect
+  df <- effect_data_list[[eff_name]]
+  
+  # Skip empty effects
+  if (nrow(df) == 0) {
+    cat(sprintf("Skipping empty effect for '%s'\n", eff_name))
+    next
+  }
+  
+  # Build a safe file name: replace ":" with "_" in the effect name
+  out_file <- paste0("effect_", gsub(":", "_", eff_name), ".csv")
+  
+  # Build the full path inside "effects_data/"
+  out_path <- file.path("effects_data", out_file)
+  
+  # Write CSV
+  write.csv(df, file = out_path, row.names = FALSE)
+  message("Wrote: ", out_path)
+}  
+```
+
