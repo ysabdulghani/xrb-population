@@ -168,3 +168,11 @@ batch*.py
 *.pdf
 *.csv
 *.npy
+*.err
+*.out
+
+#tmp folders
+tmp*/
+
+#trial folders
+trial*
