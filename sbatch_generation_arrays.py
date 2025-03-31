@@ -44,7 +44,7 @@ else:
 
 # Configuration
 email = "youssef.abdulghani@student.montana.edu"
-cpus_per_task = 96
+cpus_per_task = 128
 script_path = "/home/r77m975/xrb-population/observational_effects.py"
 output_dir = f"/home/r77m975/xrb-population/job_files_{insturment}"
 outlog_base_dir = f"/home/r77m975/xrb-population/out_logs_{insturment}"

@@ -11,7 +11,7 @@
 #SBATCH --mail-type=ALL
 #SBATCH --array=0-863
 
-echo "Running on node: $(hostname)"
+ 
 
 # Progress tracking setup
 progress_file="/home/r77m975/xrb-population/out_logs_maxi/job_1/progress.log"
