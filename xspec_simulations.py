@@ -22,17 +22,19 @@ class simulation:
         if instrument == 'maxi': # Will need to change this part according to your need
             self.energyRange_low = '2.0'
             self.energyRange_high= '20.0'
+            self.sourceFilename = "sim_files/gx339-4_g_low_src.pi"
             self.responseFilename =  "sim_files/gx339-4_g_low.rsp" # Need to be short name and in same directory where your run simulation
             self.backgroundFilename = "sim_files/gx339-4_g_low_bgd.pi"
         elif instrument == 'xrt':
             self.energyRange_low = '0.7'
             self.energyRange_high= '10.0'
+            self.sourceFilename = "sim_files/00010627114src_wt.pha"
             self.responseFilename =  "sim_files/swxwt0to2s6_20131212v015.rmf" # Need to be short name and in same directory where your run simulation
-            self.backgroundFilename = "sim_files/00010627013bgd_wt.pha"
+            self.backgroundFilename = "sim_files/00010627114bgd_wt.pha"
         else:
             raise ValueError('Only maxi or xrt allowed.')
 
-    def run(self,id='',**kwargs):
+    def run(self,id='',spec_dir='',**kwargs):
 
         '''
         Perform a simulation run (fake a spectrum and then fit it)
@@ -47,21 +49,24 @@ class simulation:
         '''
         
         AllModels.clear()
-        
+        AllData.clear()
 
         Model(self.model,setPars=self.sim_params_dic)
 
-        fake_settings = FakeitSettings(response=self.responseFilename,background=self.backgroundFilename,fileName="fakeit_tmp_"+str(id)+".pha",**kwargs)
+        s1 = Spectrum(self.sourceFilename)
+
+        fake_settings = FakeitSettings(response=self.responseFilename,background=self.backgroundFilename,fileName=spec_dir+"/fakeit_tmp_"+str(id)+".pha",**kwargs)
         AllData.fakeit(1, fake_settings, applyStats=True)
 
         with hsp.utils.local_pfiles_context():
-            hsp.ftgrouppha(infile='fakeit_tmp_'+str(id)+'.pha',backfile='fakeit_tmp_'+str(id)+'_bkg.pha',outfile='fakeit_tmp_'+str(id)+'_binned.pha',grouptype='snmin',groupscale='3')
+            hsp.ftgrouppha(infile=spec_dir+'/fakeit_tmp_'+str(id)+'.pha',backfile=spec_dir+'/fakeit_tmp_'+str(id)+'_bkg.pha',outfile=spec_dir+'/fakeit_tmp_'+str(id)+'_binned.pha',grouptype='snmin',groupscale='3')
 
         # command = f'ftgrouppha fakeit_tmp_'+str(id)+'.pha backfile=fakeit_tmp_'+str(id)+'_bkg.pha fakeit_tmp_'+str(id)+'_binned.pha snmin 3'
         # process = subprocess.Popen(command, shell=True)
         # process.wait()
+        
         AllData.clear()
-        s1 = Spectrum("fakeit_tmp_"+str(id)+"_binned.pha")
+        s1 = Spectrum(spec_dir+"/fakeit_tmp_"+str(id)+"_binned.pha")
         AllData.ignore("bad")
         s1.ignore("**-"+self.energyRange_low+","+self.energyRange_high+"-**")
         AllModels.clear()
@@ -76,30 +81,22 @@ class simulation:
                 pass
         except:
             pass
+
+        tot_flux = None
+
+        try:
+            AllModels.calcFlux(self.energyRange_low+" "+self.energyRange_high)
+            tot_flux = s1.flux[0]
+        except:
+            pass
         
-        command = f'rm -rf fakeit_tmp_'+str(id)+'.pha fakeit_tmp_'+str(id)+'_bkg.pha fakeit_tmp_'+str(id)+'_binned.pha snmin 3'
-        process = subprocess.Popen(command, shell=True)
-        process.wait()
+        # command = [
+        #     'rm', '-rf',
+        #     f"{spec_dir}/fakeit_tmp_{id}.pha",
+        #     f"{spec_dir}/fakeit_tmp_{id}_bkg.pha",
+        #     f"{spec_dir}/fakeit_tmp_{id}_binned.pha"
+        # ]
+        # process = subprocess.Popen(command)
+        # process.wait(timeout=30)
 
-        return fitModel
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return fitModel,tot_flux
