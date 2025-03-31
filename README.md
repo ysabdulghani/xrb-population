@@ -40,7 +40,7 @@ The simulation study supports the analysis presented in the paper:
 
 - **Data Files and Database:**
   - `all_data_flat_maxi.csv` and `all_data_flat_xrt.csv`: CSV files containing simulation or observational data.
-  - `results.db`: A database file (if used) to store simulation outcomes.
+  - `results.db`: A database file used to store all simulation outcomes.
 
 ## Installation
 
