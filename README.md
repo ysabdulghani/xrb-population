@@ -12,7 +12,7 @@ This project aims to:
 
 The simulation study supports the analysis presented in the paper:
 
-> Abdulghani et al., “A New Independent Look at the Galactic Black Hole LMXB Distribution”
+> [Abdulghani et al. 2025, “A new independent look at the galactic black hole low-mass X-ray binary distribution”](https://arxiv.org/abs/2503.23812)
 
 ## Repository Structure
 
@@ -104,7 +104,7 @@ You can then use these tables for further statistical analysis or plotting to co
 
 The project is motivated by the need to understand observational biases in distance estimates to BH-LMXBs and their spatial distribution in the Milky Way. By simulating spectra over a wide parameter grid, the project investigates how systematic errors (for example, due to interstellar absorption or instrumental response) can affect the inferred distances. The bias correction approach leverages an empirical probability density function—closely resembling an inverse-square law—to de-bias the observed distribution, thereby yielding a corrected view of the Galactic population.
 
-For more details on the methodology and scientific results, please refer to the paper.
+For more details on the methodology and scientific results, please refer to the [paper](https://arxiv.org/abs/2503.23812).
 
 ## Acknowledgements
 
@@ -115,5 +115,5 @@ This project makes use of:
 - Python libraries: NumPy, Pandas, Matplotlib, and tqdm.
 - The Astropy community for numerous astronomy utilities.
 
-For further details and discussion of the scientific results, please see the paper by Abdulghani et al 2025.
+For further details and discussion of the scientific results, please see the paper by [Abdulghani et al 2025](https://arxiv.org/abs/2503.23812).
 
