@@ -324,7 +324,7 @@ if __name__ == "__main__":
 
     all_args = []
     
-    tmp_dir_name = tempfile.mkdtemp(prefix="tmp_", dir="/dev/shm")
+    tmp_dir_name = tempfile.mkdtemp(prefix="tmp_", dir=".")
     print(f"Created temporary directory: {tmp_dir_name}")
 
     counter = 0  # Initialize a counter
@@ -380,9 +380,9 @@ if __name__ == "__main__":
     df_red = pd.DataFrame(table_red)
     df_red.to_csv("results/"+str(args.instrument)+"_results/table_g"+str(args.gamma)+"_T"+str(args.temp)+"_a"+str(args.a)+"_m"+str(args.mass)+"_i"+str(args.inc)+"_r"+str(args.ratio_disk_to_tot)+"_e"+str(args.exposure)+".csv", index=False)
 
-    command = f'rm -rf '+tmp_dir_name
-    process = subprocess.Popen(command, shell=True)
-    process.wait()
+    # command = f'rm -rf '+tmp_dir_name
+    # process = subprocess.Popen(command, shell=True)
+    # process.wait()
 
     end_time = time.perf_counter()
     total_time = end_time - start_time

@@ -30,7 +30,7 @@ if insturment == 'maxi':
         'r': [0.2, 0.5, 0.9],
         'e': [400.0, 1500.0, 10000.0]
     }
-else:
+elif insturment == 'xrt':
         # Parameters
     preset_values = {
         'g': [1.7, 2.0, 3.0],
@@ -41,17 +41,30 @@ else:
         'r': [0.2, 0.5, 0.9],
         'e': [400.0, 1000.0, 5000.0]
     }
+else:
+        # Parameters
+    preset_values = {
+        'g': [1.7, 2.0, 3.0],
+        'T': [0.5, 0.7, 1.0],
+        'a': [0.0, 0.998],
+        'm': [6.0, 8.0, 10.0],
+        'i': [0.0, 60.0, 80.0],
+        'r': [0.2, 0.5, 0.9],
+        'e': [400.0, 1000.0, 2500.0]    
+    }
 
 # Configuration
 email = "youssef.abdulghani@student.montana.edu"
-cpus_per_task = 128
+cpus_per_task = 64
 script_path = "/home/r77m975/xrb-population/observational_effects.py"
 output_dir = f"/home/r77m975/xrb-population/job_files_{insturment}"
 outlog_base_dir = f"/home/r77m975/xrb-population/out_logs_{insturment}"
 if insturment == 'maxi':
     time_per_combination = 200  # seconds
-else:
+elif insturment == 'xrt':
     time_per_combination = 400  # seconds
+else:
+    time_per_combination = 200 
     
 max_job_duration = 2 * 24 * 60 * 60  # 2 days in seconds
 

@@ -31,6 +31,12 @@ class simulation:
             self.sourceFilename = "sim_files/00010627114src_wt.pha"
             self.responseFilename =  "sim_files/swxwt0to2s6_20131212v015.rmf" # Need to be short name and in same directory where your run simulation
             self.backgroundFilename = "sim_files/00010627114bgd_wt.pha"
+        elif instrument == 'rxte':
+            self.energyRange_low = '3.0'
+            self.energyRange_high= '20.0'
+            self.sourceFilename = 'sim_files/src_corr.pha'
+            self.responseFilename = 'sim_files/resp.rsp'
+            self.backgroundFilename = 'sim_files/background.pha'
         else:
             raise ValueError('Only maxi or xrt allowed.')
 
